@@ -1,46 +1,110 @@
-// Enemies our player must avoid
-var Enemy = function() {
-    // Variables applied to each of our instances go here,
-    // we've provided one for you to get started
+const blockX = 102;
+const blockY = 83;
+const enemyBoundsX = 82;
+const enemyBoundsY = 63;
+const initialX = 205;
+const initialY = 405;
 
-    // The image/sprite for our enemies, this uses
-    // a helper we've provided to easily load images
-    this.sprite = 'images/enemy-bug.png';
+const winSound = new Audio("sounds/Success 1.mp3");
+const looseSound = new Audio("sounds/Error 1.mp3");
+
+// Helper Functions ---------------------------------------------------------------------------
+function generateRandomSpeed() {
+  return 100 + Math.floor(Math.random() * 300);
+}
+
+function checkCollision(enemy) {
+  if (
+    player.x < enemy.x + enemyBoundsX &&
+    player.x + enemyBoundsX > enemy.x &&
+    player.y < enemy.y + enemyBoundsY &&
+    enemyBoundsY + player.y > enemy.y
+  ) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// Enemy Class --------------------------------------------------------------------------------
+var Enemy = function(x, y, speed) {
+  this.sprite = "images/enemy-bug.png";
+
+  this.x = x;
+  this.y = y;
+  this.speed = speed;
 };
 
-// Update the enemy's position, required method for game
-// Parameter: dt, a time delta between ticks
 Enemy.prototype.update = function(dt) {
-    // You should multiply any movement by the dt parameter
-    // which will ensure the game runs at the same speed for
-    // all computers.
+  this.x += this.speed * dt;
+
+  if (this.x > blockX * 5) {
+    this.x = -blockX;
+    this.speed = generateRandomSpeed();
+  }
+
+  if (checkCollision(this)) {
+    looseSound.play();
+    player.x = initialX;
+    player.y = initialY;
+  }
 };
 
-// Draw the enemy on the screen, required method for game
 Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+  ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
+//Player Class --------------------------------------------------------------------------------
+var Player = function(x, y) {
+  this.player = "images/char-boy.png";
+  this.x = x;
+  this.y = y;
+};
 
+Player.prototype.update = function() {};
 
-// Now instantiate your objects.
-// Place all enemy objects in an array called allEnemies
-// Place the player object in a variable called player
+Player.prototype.render = function() {
+  ctx.drawImage(Resources.get(this.player), this.x, this.y);
+};
 
+Player.prototype.handleInput = function(keyPress) {
+  if (keyPress == "left" && this.x > 1) {
+    this.x -= blockX;
+  }
+  if (keyPress == "right" && this.x < blockX * 4) {
+    this.x += blockX;
+  }
+  if (keyPress == "up" && this.y > 0) {
+    this.y -= blockY;
+  }
+  if (keyPress == "down" && this.y < blockY * 4) {
+    this.y += blockY;
+  }
+  if (this.y < 0) {
+    winSound.play();
+    setTimeout(() => {
+      this.x = initialX;
+      this.y = initialY;
+    }, 500);
+  }
+};
 
+//--------------------------------------------------------------------------------------------
+var player = new Player(initialX, initialY);
+var allEnemies = [];
 
-// This listens for key presses and sends the keys to your
-// Player.handleInput() method. You don't need to modify this.
-document.addEventListener('keyup', function(e) {
-    var allowedKeys = {
-        37: 'left',
-        38: 'up',
-        39: 'right',
-        40: 'down'
-    };
+[blockY - 20, blockY * 2 - 20, blockY * 3 - 20].forEach(function(locationY) {
+  enemy = new Enemy(-blockX, locationY, generateRandomSpeed());
+  allEnemies.push(enemy);
+});
 
-    player.handleInput(allowedKeys[e.keyCode]);
+document.addEventListener("keyup", function(e) {
+  var allowedKeys = {
+    37: "left",
+    38: "up",
+    39: "right",
+    40: "down"
+  };
+
+  player.handleInput(allowedKeys[e.keyCode]);
 });
